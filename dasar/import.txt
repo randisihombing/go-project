@@ -1,0 +1,20 @@
+package main
+
+import (
+	"fmt"
+	"net/http"
+)
+
+func main() {
+	fmt.Print("Standart Library")
+
+	resp, err := http.Get("https://jsonplaceholder.typicode.com/posts/1")
+
+	if err != nil {
+		fmt.Print("Error: ", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	fmt.Print("HTTP Response Status: ", resp.Status)
+}

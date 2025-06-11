@@ -1,0 +1,30 @@
+package main
+
+import "fmt"
+
+var middleName = "Cane"
+
+func main() {
+	// var age int
+	// var name string = "jhon"
+	// var name1 = "jane"
+
+	// count = 10
+	// lastName := "smith"
+	// middleName := "Cane""
+	fmt.Println(middleName)
+
+	//Default values so the compile wont be run this
+	//Numeric Types : 0
+	//Boolean Types: false
+	//String type:
+	//Pointers, slices,maps, function, and structs: nill
+
+	//-----> Scope
+
+}
+
+func printName() {
+	firstName := "Michael"
+	fmt.Print(firstName)
+}
