@@ -1,0 +1,38 @@
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+//GoRoutine just a function that leave the main thread and run in the background and come back to join the main
+//tread once the function are finished/ready to return any value
+//GoRoutine do not stop the program flow and are non blocking
+
+func main() {
+	go sayHello()
+	go printNumber()
+	go printLetter()
+
+	time.Sleep(2 * time.Second)
+
+}
+
+func sayHello() {
+	time.Sleep(1 * time.Second)
+	fmt.Println("Hello from go Routine")
+}
+
+func printNumber() {
+	for i := 0; i < 5; i++ {
+		fmt.Println(i)
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+
+func printLetter() {
+	for _, letter := range "abcde" {
+		fmt.Println(string(letter))
+		time.Sleep(100 * time.Millisecond)
+	}
+}
