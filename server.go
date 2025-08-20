@@ -1,82 +1,121 @@
 package main
 
 import (
-	"crypto/tls"
 	"fmt"
 	"log"
 	"net/http"
-
-	"golang.org/x/net/http2"
+	"strings"
 )
 
+func rootHandler(w http.ResponseWriter, r *http.Request) {
+	// fmt.Fprint(w, "Hello Root Route")
+	w.Write([]byte("Hello Root Route"))
+	fmt.Println("Hello Root Router")
+}
+
+func teachersHandler(w http.ResponseWriter, r *http.Request) {
+	//teachers/{id}
+	//teachers/?key=value&query=value2&sortby=email&sortorder=ASC
+	fmt.Println(r.Method)
+	switch r.Method {
+	case http.MethodGet:
+		fmt.Println(r.URL.Path)
+		path := strings.TrimPrefix(r.URL.Path, "/teachers/")
+		userID := strings.TrimSuffix(path, "/")
+
+		fmt.Println("The ID is:", userID)
+		fmt.Println("Query Params:", r.URL.Query())
+
+		queryParams := r.URL.Query()
+		sortBy := queryParams.Get("sortby")
+		key := queryParams.Get("key")
+		sortOrder := queryParams.Get("sortorder")
+
+		if sortOrder == "" {
+			sortOrder = "DESC"
+		}
+
+		fmt.Printf("Sort by: %v, Sort order: %v, Key: %v", sortBy, sortOrder, key)
+
+		w.Write([]byte("Hello GET Method on Teachers Route"))
+		// fmt.Println("Hello GET Method on Teachers Route")
+	case http.MethodPost:
+		w.Write([]byte("Hello POST Method on Teachers Route"))
+		fmt.Println("Hello POST Method on Teachers Route")
+	case http.MethodPut:
+		w.Write([]byte("Hello PUT Method on Teachers Route"))
+		fmt.Println("Hello PUT Method on Teachers Route")
+	case http.MethodPatch:
+		w.Write([]byte("Hello PATCH Method on Teachers Route"))
+		fmt.Println("Hello PATCH Method on Teachers Route")
+	case http.MethodDelete:
+		w.Write([]byte("Hello DELETE Method on Teachers Route"))
+		fmt.Println("Hello DELETE Method on Teachers Route")
+	}
+	// w.Write([]byte("Hello Teachers Route"))
+	// fmt.Println("Hello Teachers Route")
+
+}
+
+func studentsHandler(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		w.Write([]byte("Hello GET Method on Students Route"))
+		fmt.Println("Hello GET Method on Students Route")
+	case http.MethodPost:
+		w.Write([]byte("Hello POST Method on Students Route"))
+		fmt.Println("Hello POST Method on Students Route")
+	case http.MethodPut:
+		w.Write([]byte("Hello PUT Method on Students Route"))
+		fmt.Println("Hello PUT Method on Students Route")
+	case http.MethodPatch:
+		w.Write([]byte("Hello PATCH Method on Students Route"))
+		fmt.Println("Hello PATCH Method on Students Route")
+	case http.MethodDelete:
+		w.Write([]byte("Hello DELETE Method on Students Route"))
+		fmt.Println("Hello DELETE Method on Students Route")
+	}
+	w.Write([]byte("Hello Students Route"))
+	fmt.Println("Hello Students Route")
+}
+
+func execsHandler(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		w.Write([]byte("Hello GET Method on Execs Route"))
+		fmt.Println("Hello GET Method on Execs Route")
+	case http.MethodPost:
+		w.Write([]byte("Hello POST Method on Execs Route"))
+		fmt.Println("Hello POST Method on Execs Route")
+	case http.MethodPut:
+		w.Write([]byte("Hello PUT Method on Execs Route"))
+		fmt.Println("Hello PUT Method on Execs Route")
+	case http.MethodPatch:
+		w.Write([]byte("Hello PATCH Method on Execs Route"))
+		fmt.Println("Hello PATCH Method on Execs Route")
+	case http.MethodDelete:
+		w.Write([]byte("Hello DELETE Method on Execs Route"))
+		fmt.Println("Hello DELETE Method on Execs Route")
+	}
+	w.Write([]byte("Hello Execs Route"))
+	fmt.Println("Hello Execs Router")
+}
+
 func main() {
+	port := ":3000"
 
-	http.HandleFunc("/orders", func(w http.ResponseWriter, r *http.Request) {
-		logRequestDetail(r)
-		fmt.Fprintf(w, "Handling incoming orders")
-	})
+	http.HandleFunc("/", rootHandler)
 
-	http.HandleFunc("/users", func(w http.ResponseWriter, r *http.Request) {
-		logRequestDetail(r)
-		fmt.Fprintf(w, "Handling users")
-	})
+	http.HandleFunc("/teachers/", teachersHandler)
 
-	port := 3000
+	http.HandleFunc("/students/", studentsHandler)
 
-	//load the TLS cert and key
-	cert := "cert.pem"
-	key := "key.pem"
+	http.HandleFunc("/execs/", execsHandler)
 
-	//configure TLS
-	tlsConfig := &tls.Config{
-		MinVersion: tls.VersionTLS12,
-	}
+	fmt.Println("Server is running in port: ", port)
 
-	//create a custome server
-	server := http.Server{
-		Addr:      fmt.Sprintf(":%d", port),
-		Handler:   nil,
-		TLSConfig: tlsConfig,
-	}
-
-	//enable http2
-	http2.ConfigureServer(&server, &http2.Server{})
-
-	fmt.Println("Server is Listening to port: ", port)
-
-	err := server.ListenAndServeTLS(cert, key)
+	err := http.ListenAndServe(port, nil)
 	if err != nil {
-		log.Fatalln("Couldn't start server", err)
-	}
-	//HTTP 1.1 without TLS
-	// err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
-}
-
-func logRequestDetail(r *http.Request) {
-	httpVersion := r.Proto
-
-	fmt.Println("Received request with HTTP version", httpVersion)
-
-	if r.TLS != nil {
-		tlsVersion := getTLSVersionName(r.TLS.Version)
-		fmt.Println("Received request with TLS version: ", tlsVersion)
-	} else {
-		fmt.Println("Received request without TLS")
-	}
-
-}
-
-func getTLSVersionName(version uint16) string {
-	switch version {
-	case tls.VersionTLS10:
-		return "TLS 1.0"
-	case tls.VersionTLS11:
-		return "TLS 1.1"
-	case tls.VersionTLS12:
-		return "TLS 1.2"
-	case tls.VersionTLS13:
-		return "TLS 1.3"
-	default:
-		return "Unknown TLS Version"
+		log.Fatalln("Error starting the server", err)
 	}
 }

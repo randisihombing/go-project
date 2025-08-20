@@ -1,0 +1,43 @@
+package main
+
+import (
+	"encoding/json"
+	"net/http"
+)
+
+type Person struct {
+	Name string `json:"name"`
+	Age  int32  `json:"age"`
+}
+
+var personData = map[string]Person{
+	"1": {Name: "Jhon Doe", Age: 30},
+	"2": {Name: "Mike Doe", Age: 25},
+	"3": {Name: "Nika Doe", Age: 20},
+}
+
+func getPersonHandler(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+	if id == "" {
+		http.Error(w, "ID is missing", http.StatusBadRequest)
+		return
+	}
+
+	person, exists := personData[id]
+	if !exists {
+		http.Error(w, "Person Not Found", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	if err := json.NewEncoder(w).Encode(person); err != nil {
+		http.Error(w, "Failed to Encode Rsponse", http.StatusInternalServerError)
+	}
+}
+func main() {
+
+	http.HandleFunc("/person", getPersonHandler)
+
+	http.ListenAndServe(":8080", nil)
+}
