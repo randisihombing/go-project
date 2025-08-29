@@ -4,9 +4,9 @@ import (
 	"crypto/tls"
 	"fmt"
 	mw "gocourse/internal/api/middlewares"
+	"gocourse/internal/router"
 	"log"
 	"net/http"
-	"time"
 )
 
 type User struct {
@@ -15,115 +15,35 @@ type User struct {
 	City string `json:"city"`
 }
 
-func rootHandler(w http.ResponseWriter, r *http.Request) {
-	// fmt.Fprint(w, "Hello Root Route")
-	w.Write([]byte("Hello Root Route"))
-	fmt.Println("Hello Root Router")
-}
-
-func teachersHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(r.Method)
-	switch r.Method {
-	case http.MethodGet:
-
-		w.Write([]byte("Hello GET Method on Teachers Route"))
-		fmt.Println("Hello GET Method on Teachers Route")
-	case http.MethodPost:
-		w.Write([]byte("Hello POST Method on Teachers Route"))
-		fmt.Println("Hello POST Method on Teachers Route")
-	case http.MethodPut:
-		w.Write([]byte("Hello PUT Method on Teachers Route"))
-		fmt.Println("Hello PUT Method on Teachers Route")
-	case http.MethodPatch:
-		w.Write([]byte("Hello PATCH Method on Teachers Route"))
-		fmt.Println("Hello PATCH Method on Teachers Route")
-	case http.MethodDelete:
-		w.Write([]byte("Hello DELETE Method on Teachers Route"))
-		fmt.Println("Hello DELETE Method on Teachers Route")
-	}
-
-}
-
-func studentsHandler(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		w.Write([]byte("Hello GET Method on Students Route"))
-		fmt.Println("Hello GET Method on Students Route")
-	case http.MethodPost:
-		w.Write([]byte("Hello POST Method on Students Route"))
-		fmt.Println("Hello POST Method on Students Route")
-	case http.MethodPut:
-		w.Write([]byte("Hello PUT Method on Students Route"))
-		fmt.Println("Hello PUT Method on Students Route")
-	case http.MethodPatch:
-		w.Write([]byte("Hello PATCH Method on Students Route"))
-		fmt.Println("Hello PATCH Method on Students Route")
-	case http.MethodDelete:
-		w.Write([]byte("Hello DELETE Method on Students Route"))
-		fmt.Println("Hello DELETE Method on Students Route")
-	}
-	w.Write([]byte("Hello Students Route"))
-	fmt.Println("Hello Students Route")
-}
-
-func execsHandler(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		w.Write([]byte("Hello GET Method on Execs Route"))
-		// fmt.Println("Hello GET Method on Execs Route")
-	case http.MethodPost:
-		w.Write([]byte("Hello POST Method on Execs Route"))
-		// fmt.Println("Hello POST Method on Execs Route")
-	case http.MethodPut:
-		w.Write([]byte("Hello PUT Method on Execs Route"))
-		// fmt.Println("Hello PUT Method on Execs Route")
-	case http.MethodPatch:
-		w.Write([]byte("Hello PATCH Method on Execs Route"))
-		// fmt.Println("Hello PATCH Method on Execs Route")
-	case http.MethodDelete:
-		w.Write([]byte("Hello DELETE Method on Execs Route"))
-		// fmt.Println("Hello DELETE Method on Execs Route")
-	}
-	// w.Write([]byte("Hello Execs Route"))
-	// fmt.Println("Hello Execs Router")
-}
-
 func main() {
 	port := ":3000"
 
 	cert := "cert.pem"
 	key := "key.pem"
 
-	mux := http.NewServeMux()
-
-	mux.HandleFunc("/", rootHandler)
-
-	mux.HandleFunc("/teachers/", teachersHandler)
-
-	mux.HandleFunc("/students/", studentsHandler)
-
-	mux.HandleFunc("/execs/", execsHandler)
-
 	tlsConfig := &tls.Config{
 		MinVersion: tls.VersionTLS12,
 	}
 
-	rl := mw.NewRateLimiter(5, time.Minute)
+	// rl := mw.NewRateLimiter(5, time.Minute)
 
-	hppOptions := mw.HPPOptions{
-		CheckQuery:                  true,
-		CheckBody:                   true,
-		CheckBodyOnlyForContentType: "application/x-www-form-urlencoded",
-		Whitelist:                   []string{"sortBy", "sortOrder", "name", "age", "class"},
-	}
+	// hppOptions := mw.HPPOptions{
+	// 	CheckQuery:                  true,
+	// 	CheckBody:                   true,
+	// 	CheckBodyOnlyForContentType: "application/x-www-form-urlencoded",
+	// 	Whitelist:                   []string{"sortBy", "sortOrder", "name", "age", "class"},
+	// }
 
-	secureMux := mw.Hpp(hppOptions)(rl.Middleware(mw.Compression(mw.ResponseTimeMiddleware(mw.SecurityHeaders(mw.Cors(mux))))))
+	// secureMux := mw.Cors(rl.Middleware(mw.ResponseTimeMiddleware(mw.SecurityHeaders(mw.Compression(mw.Hpp(hppOptions)(mux))))))
+
+	// secureMux := utils.ApplyMiddlewares(mux, mw.Hpp(hppOptions), mw.Compression, mw.SecurityHeaders, mw.ResponseTimeMiddleware, rl.Middleware, mw.Cors)
+
+	router := router.Router()
+	secureMux := mw.SecurityHeaders(router)
 
 	server := &http.Server{
-		Addr: port,
-		// Handler: middlewares.SecurityHeaders(mux),
-		Handler: secureMux,
-		// Handler:   middlewares.Cors(mux),
+		Addr:      port,
+		Handler:   secureMux,
 		TLSConfig: tlsConfig,
 	}
 
