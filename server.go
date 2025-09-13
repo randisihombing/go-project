@@ -4,9 +4,13 @@ import (
 	"crypto/tls"
 	"fmt"
 	mw "gocourse/internal/api/middlewares"
+	"gocourse/internal/repository/sqlconnect"
 	"gocourse/internal/router"
 	"log"
 	"net/http"
+	"os"
+
+	"github.com/joho/godotenv"
 )
 
 type User struct {
@@ -16,7 +20,18 @@ type User struct {
 }
 
 func main() {
-	port := ":3000"
+
+	err := godotenv.Load()
+	if err != nil {
+		return
+	}
+
+	_, err = sqlconnect.ConnectDb()
+	if err != nil {
+		fmt.Println("Error------:", err)
+		return
+	}
+	port := os.Getenv("API_PORT")
 
 	cert := "cert.pem"
 	key := "key.pem"
@@ -49,7 +64,7 @@ func main() {
 
 	fmt.Println("Server is running in port: ", port)
 
-	err := server.ListenAndServeTLS(cert, key)
+	err = server.ListenAndServeTLS(cert, key)
 	if err != nil {
 		log.Fatalln("Error starting the server", err)
 	}
