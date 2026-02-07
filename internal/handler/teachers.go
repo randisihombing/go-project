@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"gocourse/internal/model"
 	"gocourse/internal/repository/sqlconnect"
+	"io"
 	"log"
 	"net/http"
 	"strconv"
@@ -60,11 +61,53 @@ func GetOneTeacherHandlers(w http.ResponseWriter, r *http.Request) {
 func AddTeacherHandler(w http.ResponseWriter, r *http.Request) {
 
 	var newTeachers []model.Teacher
+	var rawTeachers []map[string]interface{}
 
-	err := json.NewDecoder(r.Body).Decode(&newTeachers)
+	body, error := io.ReadAll(r.Body)
+	if error != nil {
+		http.Error(w, "Error reading request body", http.StatusInternalServerError)
+		return
+	}
+
+	defer r.Body.Close()
+
+	err := json.Unmarshal(body, &rawTeachers)
+	// err := json.NewDecoder(r.Body).Decode(&rawTeachers)
 	if err != nil {
 		http.Error(w, "Invalid Request Body", http.StatusBadRequest)
 		return
+	}
+
+	fields := GetFieldNames(model.Teacher{})
+
+	allowedFields := make(map[string]struct{})
+	for _, field := range fields {
+		allowedFields[field] = struct{}{}
+	}
+
+	for _, teacher := range rawTeachers {
+		for key := range teacher {
+			_, ok := allowedFields[key]
+			if !ok {
+				http.Error(w, "Unacceptable field found in request. Only use allowed fields.", http.StatusBadRequest)
+				return
+			}
+		}
+	}
+
+	err = json.Unmarshal(body, &newTeachers)
+	// err = json.NewDecoder(r.Body).Decode(&newTeachers)
+	if err != nil {
+		http.Error(w, "Invalid Request Body", http.StatusBadRequest)
+		return
+	}
+
+	for _, teacher := range newTeachers {
+		err := CheckBlankFields(teacher)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 	}
 
 	addedTeachers, err := sqlconnect.AddTeachersDbHandler(newTeachers)
