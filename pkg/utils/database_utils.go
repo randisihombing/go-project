@@ -24,7 +24,7 @@ func GenerateInsertQuery(tableName string, model interface{}) string {
 			placeholders += "?"
 		}
 	}
-	return fmt.Sprintf("INSERT INTO teachers (%s) VALUES (%s)", tableName, columns, placeholders)
+	return fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", tableName, columns, placeholders)
 }
 
 func GetStructValues(model interface{}) []interface{} {
