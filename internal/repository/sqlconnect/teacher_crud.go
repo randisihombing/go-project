@@ -268,7 +268,7 @@ func PatchOneTeacher(id int, updates map[string]interface{}) (model.Teacher, err
 		for i := 0; i < teacherVal.NumField(); i++ {
 			field := teacherType.Field(i)
 			field.Tag.Get("json")
-			if field.Tag.Get("json") == k+" ,omitempty" {
+			if field.Tag.Get("json") == k+",omitempty" {
 				if teacherVal.Field(i).CanSet() {
 					fieldVal := teacherVal.Field(i)
 					fieldVal.Set(reflect.ValueOf(v).Convert(teacherVal.Field(i).Type()))
@@ -320,21 +320,21 @@ func DeleteTeachers(ids []int) ([]int, error) {
 	if err != nil {
 		log.Println(err)
 
-		return nil, utils.ErrorHandler(err, "Error update data")
+		return nil, utils.ErrorHandler(err, "Error delete data")
 	}
 	defer db.Close()
 
 	tx, err := db.Begin()
 	if err != nil {
 
-		return nil, utils.ErrorHandler(err, "Error update data")
+		return nil, utils.ErrorHandler(err, "Error delete data")
 	}
 
 	stmt, err := tx.Prepare("DELETE FROM teachers WHERE id = ?")
 	if err != nil {
 		tx.Rollback()
 
-		return nil, utils.ErrorHandler(err, "Error update data")
+		return nil, utils.ErrorHandler(err, "Error delete data")
 	}
 	defer stmt.Close()
 
@@ -345,13 +345,13 @@ func DeleteTeachers(ids []int) ([]int, error) {
 		if err != nil {
 			tx.Rollback()
 
-			return nil, utils.ErrorHandler(err, "Error update data")
+			return nil, utils.ErrorHandler(err, "Error delete data")
 		}
 		rowsAffected, err := result.RowsAffected()
 		if err != nil {
 			tx.Rollback()
 
-			return nil, utils.ErrorHandler(err, "Error update data")
+			return nil, utils.ErrorHandler(err, "Error delete data")
 		}
 		//if teacher was deleted then add the id to the deleted ids slice
 		if rowsAffected > 0 {
@@ -371,7 +371,7 @@ func DeleteTeachers(ids []int) ([]int, error) {
 	if err != nil {
 		tx.Rollback()
 
-		return nil, utils.ErrorHandler(err, "Error update data")
+		return nil, utils.ErrorHandler(err, "Error delete data")
 	}
 
 	if len(deletedIds) < 1 {
@@ -379,4 +379,37 @@ func DeleteTeachers(ids []int) ([]int, error) {
 		return nil, utils.ErrorHandler(err, "IDs do not exist")
 	}
 	return deletedIds, nil
+}
+
+func GetStudentsByTeacherIdFromDb(teacherId string, students []model.Student) ([]model.Student, error) {
+	db, err := ConnectDb()
+	if err != nil {
+		log.Println(err)
+		return nil, utils.ErrorHandler(err, "Error retrieve data")
+	}
+	defer db.Close()
+
+	query := `SELECT id, first_name, last_name, email, class FROM students WHERE class = (SELECT class from teachers WHERE id = ?)`
+	rows, err := db.Query(query, teacherId)
+	if err != nil {
+		log.Println(err)
+		return nil, utils.ErrorHandler(err, "Error retrieve data")
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var student model.Student
+		err := rows.Scan(&student.ID, &student.FirstName, &student.LastName, &student.Email, &student.Class)
+		if err != nil {
+			log.Println(err)
+			return nil, utils.ErrorHandler(err, "Error retrieve data")
+		}
+		students = append(students, student)
+	}
+	err = rows.Err()
+	if err != nil {
+		log.Println(err)
+		return nil, utils.ErrorHandler(err, "Error retrieve data")
+	}
+	return students, nil
 }
