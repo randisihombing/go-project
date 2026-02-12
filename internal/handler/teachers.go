@@ -299,12 +299,20 @@ func GetStudentsByTeacherId(w http.ResponseWriter, r *http.Request) {
 func GetStudentCountByTeacherId(w http.ResponseWriter, r *http.Request) {
 	teacherId := r.PathValue("id")
 
+	var studentCount int
+
+	studentCount, err := sqlconnect.GetStudentCountByTeacherIdFromDb(teacherId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	response := struct {
 		Status string `json:"status"`
 		Count  int    `json:"int"`
 	}{
 		Status: "success",
-		Count:  len(students),
+		Count:  studentCount,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
