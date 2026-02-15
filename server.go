@@ -6,6 +6,7 @@ import (
 	mw "gocourse/internal/api/middlewares"
 	"gocourse/internal/repository/sqlconnect"
 	"gocourse/internal/router"
+	"gocourse/pkg/utils"
 	"log"
 	"net/http"
 	"os"
@@ -28,7 +29,7 @@ func main() {
 
 	_, err = sqlconnect.ConnectDb()
 	if err != nil {
-		fmt.Println("Error------:", err)
+		utils.ErrorHandler(err, "")
 		return
 	}
 	port := os.Getenv("API_PORT")

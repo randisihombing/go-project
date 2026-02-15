@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"gocourse/internal/model"
 	"gocourse/internal/repository/sqlconnect"
+	"gocourse/pkg/utils"
 	"io"
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 func GetExecsHandler(w http.ResponseWriter, r *http.Request) {
@@ -207,4 +209,94 @@ func DeleteOneExecsHandler(w http.ResponseWriter, r *http.Request) {
 		ID:     id,
 	}
 	json.NewEncoder(w).Encode(response)
+}
+
+func LoginHandler(w http.ResponseWriter, r *http.Request) {
+	var req model.Exec
+
+	//Data Validation
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+
+	if req.Username == "" || req.Password == "" {
+		http.Error(w, "Username and Password are required", http.StatusBadRequest)
+		return
+	}
+
+	//Search for User Already Exist
+	user, err := sqlconnect.GetUserByUsername(req.Username)
+	if err != nil {
+		http.Error(w, "invalid username or password", http.StatusBadRequest)
+		return
+	}
+
+	//is user active
+	if user.InactiveStatus {
+		http.Error(w, "account is inactive", http.StatusForbidden)
+		return
+	}
+
+	//Verify password
+	err = utils.VerifyPassword(req.Password, user.Password)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return
+	}
+
+	//Generate JWT Token
+	tokenString, err := utils.SignToken(user.ID, req.Username, user.Role)
+	if err != nil {
+		http.Error(w, "could not create token", http.StatusInternalServerError)
+		return
+	}
+
+	//Send token as a response or as a cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:     "Bearer",
+		Value:    tokenString,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		Expires:  time.Now().Add(24 * time.Hour),
+	})
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "test",
+		Value:    "testing",
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		Expires:  time.Now().Add(24 * time.Hour),
+		SameSite: http.SameSiteStrictMode,
+	})
+
+	//response body
+	w.Header().Set("Content-Type", "application/json")
+
+	response := struct {
+		Token string `json:"token"`
+	}{
+		Token: tokenString,
+	}
+	json.NewEncoder(w).Encode(response)
+
+}
+
+func LogoutHandler(w http.ResponseWriter, r *http.Request) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     "Bearer",
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		Expires:  time.Unix(0, 0),
+		SameSite: http.SameSiteStrictMode,
+	})
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`{"message": "Log out successfully"}`))
 }
