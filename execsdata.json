@@ -12,7 +12,7 @@
         "last_name": "Johnson",
         "email": "bob.johnson@example.com",
         "username": "bob.johnson",
-        "password": "securepassword2", 
+        "password": "securepassword2", ///securepassword222
         "role": "admin"
     },
     {

@@ -1,0 +1,16 @@
+Update these lines in your .bashrc or .zshrc file (depending on what your default shell is.
+.bashrc or .zshrc files are in your Home Folder.
+
+Check your shell using command echo $SHELL
+
+Open these files using any text editor or a command prompt editor like nano or vim and add these lines in your file.
+
+export GOPATH=$HOME/go
+export PATH="$PATH:$GOPATH/bin"
+
+
+
+How to go to MailHog
+cd go
+cd bin
+MailHog
