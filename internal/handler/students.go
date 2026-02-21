@@ -14,25 +14,47 @@ import (
 func GetStudentsHandlers(w http.ResponseWriter, r *http.Request) {
 
 	var students []model.Student
-	students, err := sqlconnect.GetStudentsDbHandler(students, r)
+	//url?limit=50&page=1
+	//database will leave/will not show calculated specified entries from the beginning, page -1 * limit (1-1*50 = 0*50 = 0)
+	//page 2, 2-1 *50= 50, next 50 entries
+	page, limit := getPaginationParams(r)
+
+	students, totalStudents, err := sqlconnect.GetStudentsDbHandler(students, r, limit, page)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	response := struct {
-		Status string          `json:"status"`
-		Count  int             `json:"count"`
-		Data   []model.Student `json:"data"`
+		Status   string          `json:"status"`
+		Count    int             `json:"count"`
+		Page     int             `json:"page"`
+		PageSize int             `json:"page_size"`
+		Data     []model.Student `json:"data"`
 	}{
-		Status: "Success",
-		Count:  len(students),
-		Data:   students,
+		Status:   "Success",
+		Count:    totalStudents,
+		Page:     page,
+		PageSize: limit,
+		Data:     students,
 	}
 
 	w.Header().Set("Content-Type", "applicaiton/json")
 	json.NewEncoder(w).Encode(response)
 
+}
+
+func getPaginationParams(r *http.Request) (int, int) {
+	page, err := strconv.Atoi(r.URL.Query().Get("page"))
+	if err != nil {
+		page = 1
+	}
+
+	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+	if err != nil {
+		limit = 10
+	}
+	return page, limit
 }
 
 // Get /students/{id}

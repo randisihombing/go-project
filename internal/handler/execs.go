@@ -350,3 +350,57 @@ func UpdatePasswordHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	json.NewEncoder(w).Encode(response)
 }
+
+func ForgotPasswordHandler(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Email string `json:"email"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, "Invalid request body", http.StatusInternalServerError)
+		return
+	}
+	r.Body.Close()
+
+	err = sqlconnect.ForgotPasswordDbHandler(req.Email)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	//respond with success message
+	fmt.Fprintf(w, "Password reset link send to %s", req.Email)
+
+}
+
+func ResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
+	token := r.PathValue("resetcode")
+
+	type request struct {
+		NewPassword     string `json:"new_password"`
+		ConfirmPassword string `json:"confirm_password"`
+	}
+
+	var req request
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, "Invalid value in request", http.StatusBadRequest)
+		return
+	}
+
+	// TODO: data validation for blank values
+	if req.NewPassword != req.ConfirmPassword {
+		http.Error(w, "Password should match", http.StatusBadRequest)
+		return
+	}
+
+	err = sqlconnect.ResetPasswordDbHandler(token, req.NewPassword)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	fmt.Fprintln(w, "Password reset successfully")
+
+}
